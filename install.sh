@@ -57,7 +57,7 @@ SCRIPT
 }
 
 write_script cmt cli
-write_script cls cls
+write_script lsc cls
 
 echo ""
 read -r -p "add 'cp --preserve=xattr' to ~/.bashrc? [y/N] " reply

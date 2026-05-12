@@ -195,7 +195,7 @@ def main() -> None:
         signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
     parser = argparse.ArgumentParser(
-        prog="cls",
+        prog="lsc",
         description="ls with file/directory comments",
     )
     parser.add_argument("-a", dest="all", action="store_true", help="show hidden files")

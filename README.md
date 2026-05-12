@@ -45,14 +45,12 @@ cmt cp  <src> <dst>        # copy file and carry its comment
 cmt mv  <src> <dst>        # move file and carry its comment
 ```
 
-### cls / lsc — directory listing with comments
+### lsc — directory listing with comments
 
 ```bash
-cls [path...]              # long listing with comments in yellow  (Linux)
-lsc [path...]              # same on Windows ('cls' is a built-in there)
-
-cls -a [path...]           # include hidden files
-cls -H [path...]           # human-readable sizes
+lsc [path...]              # long listing with comments in yellow
+lsc -a [path...]           # include hidden files
+lsc -H [path...]           # human-readable sizes
 ```
 
 ## Programmatic API
