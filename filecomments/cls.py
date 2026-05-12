@@ -1,5 +1,6 @@
 import argparse
 import os
+import platform
 import signal
 import stat
 import sys
@@ -13,6 +14,23 @@ _BLUE = "\033[94m"
 _CYAN = "\033[96m"
 _GREEN = "\033[92m"
 _YELLOW = "\033[33m"
+
+# Enable ANSI color codes on Windows (Windows 10+)
+if platform.system() == "Windows":
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetConsoleMode(
+            ctypes.windll.kernel32.GetStdHandle(-11), 7
+        )
+    except Exception:
+        pass
+
+try:
+    import grp as _grp
+    import pwd as _pwd
+    _HAS_PWD = True
+except ImportError:
+    _HAS_PWD = False
 
 
 def _mode_str(mode: int) -> str:
@@ -66,10 +84,23 @@ def _colorize(entry: os.DirEntry, name: str, use_color: bool) -> str:
     return name
 
 
-def _list_long(entries: list[os.DirEntry], human: bool, use_color: bool) -> None:
-    import grp
-    import pwd
+def _owner_group(st: os.stat_result) -> tuple[str, str]:
+    if _HAS_PWD:
+        try:
+            owner = _pwd.getpwuid(st.st_uid).pw_name
+        except KeyError:
+            owner = str(st.st_uid)
+        try:
+            group = _grp.getgrgid(st.st_gid).gr_name
+        except KeyError:
+            group = str(st.st_gid)
+    else:
+        owner = str(st.st_uid)
+        group = str(st.st_gid)
+    return owner, group
 
+
+def _list_long(entries: list[os.DirEntry], human: bool, use_color: bool) -> None:
     rows = []
     total_blocks = 0
 
@@ -79,17 +110,10 @@ def _list_long(entries: list[os.DirEntry], human: bool, use_color: bool) -> None
         except OSError:
             continue
 
-        total_blocks += st.st_blocks
+        # st_blocks is Linux/macOS only; approximate from file size on Windows
+        total_blocks += getattr(st, "st_blocks", (st.st_size + 511) // 512)
 
-        try:
-            owner = pwd.getpwuid(st.st_uid).pw_name
-        except KeyError:
-            owner = str(st.st_uid)
-        try:
-            group = grp.getgrgid(st.st_gid).gr_name
-        except KeyError:
-            group = str(st.st_gid)
-
+        owner, group = _owner_group(st)
         size_str = _human_size(st.st_size) if human else str(st.st_size)
 
         mtime = time.localtime(st.st_mtime)
@@ -167,7 +191,8 @@ def _scan(path: str, show_hidden: bool) -> list[os.DirEntry] | None:
 
 
 def main() -> None:
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+    if hasattr(signal, "SIGPIPE"):
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
     parser = argparse.ArgumentParser(
         prog="cls",

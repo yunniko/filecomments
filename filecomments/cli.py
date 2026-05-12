@@ -117,7 +117,8 @@ _SUBCOMMANDS = {"set", "get", "rm", "ls", "cp", "mv"}
 
 
 def main() -> None:
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+    if hasattr(signal, "SIGPIPE"):
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
     if len(sys.argv) > 1 and sys.argv[1] not in _SUBCOMMANDS and not sys.argv[1].startswith("-"):
         sys.argv.insert(1, "set")

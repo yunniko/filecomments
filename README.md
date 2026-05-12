@@ -1,26 +1,36 @@
 # filecomments
 
-Attach text comments to any file or directory on Linux. Comments are stored as extended attributes (`user.comment` xattr) and shown alongside `ls` output.
+Attach text comments to any file or directory. Comments are stored as filesystem metadata and shown alongside directory listings.
 
 ## Requirements
 
-- Linux
-- Python 3.10+
-- Filesystem with xattr support: ext4, btrfs, xfs *(not tmpfs or FAT32)*
+| | Linux | Windows |
+|---|---|---|
+| OS | any distro | Windows 10+ |
+| Python | 3.10+ | 3.10+ |
+| Filesystem | ext4, btrfs, xfs (xattr) | NTFS (ADS) |
+
+Comments use **extended attributes** on Linux and **Alternate Data Streams** on Windows — both are filesystem-native metadata and don't affect file content.
 
 ## Install
 
+**Linux:**
 ```bash
 git clone <url>
 cd filecomments
 bash install.sh
 ```
 
-The script checks all requirements, installs `cmt` and `cls` to `~/.local/bin`, and optionally patches `~/.bashrc` to make `cp` preserve xattrs by default.
+**Windows (PowerShell):**
+```powershell
+git clone <url>
+cd filecomments
+.\install.ps1
+```
 
-Make sure `~/.local/bin` is in your `PATH` (it is by default on most modern distros).
+Both scripts check requirements, install commands to `~/.local/bin`, and exit with a clear error if anything is missing.
 
-## Usage
+## Commands
 
 ### cmt — manage comments
 
@@ -35,10 +45,12 @@ cmt cp  <src> <dst>        # copy file and carry its comment
 cmt mv  <src> <dst>        # move file and carry its comment
 ```
 
-### cls — ls with comments
+### cls / lsc — directory listing with comments
 
 ```bash
-cls [path...]              # long listing with comments shown in yellow
+cls [path...]              # long listing with comments in yellow  (Linux)
+lsc [path...]              # same on Windows ('cls' is a built-in there)
+
 cls -a [path...]           # include hidden files
 cls -H [path...]           # human-readable sizes
 ```
@@ -58,13 +70,14 @@ filecomments.list_comments("/some/dir")       # dict[name, comment]
 
 ## How comments travel with files
 
-| Operation | Comment preserved? |
-|---|---|
-| `mv` within same filesystem | yes — inode moves, xattr stays |
-| `cmt mv src dst` | yes — works across filesystems too |
-| `cmt cp src dst` | yes |
-| `cp --preserve=xattr src dst` | yes |
-| Plain `cp src dst` | no |
-| `scp`, `git`, USB copy | no |
+| Operation | Linux | Windows |
+|---|---|---|
+| `mv` within same filesystem | yes | yes |
+| `cmt mv src dst` | yes (cross-fs too) | yes (cross-drive too) |
+| `cmt cp src dst` | yes | yes |
+| `cp --preserve=xattr` | yes | n/a |
+| `robocopy /COPYALL` | n/a | yes |
+| Plain `cp` / Explorer copy | no | no |
+| `scp`, `git`, USB copy | no | no |
 
-If you opted in during install, plain `cp` is aliased to `cp --preserve=xattr` in your shell.
+Linux install optionally patches `~/.bashrc` so plain `cp` preserves xattrs automatically.
